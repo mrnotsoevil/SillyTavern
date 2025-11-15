@@ -712,7 +712,7 @@ async function processTtsQueue() {
  * @param {object} [opts={}] - Optional options object
  * @param {string} [opts.separator=' ... '] - String to join multiple quoted blocks
  * @param {boolean} [opts.includeQuotes=true] - Keep the quote chars around the captured text
- * @param {boolean} [opts.returnEmptyOnNoQuotes=false] - Return an empty string if no quotes are found
+ * @param {boolean} [opts.returnEmptyOnNoQuotes=true] - Return an empty string if no quotes are found
  * @param {Array<[string,string]>} [opts.pairs] - Custom quote pairs; defaults cover EN/DE/FR/JP
  * @returns {string} The joined quoted blocks, or the original text if no quotes found
  */
@@ -720,7 +720,7 @@ function joinQuotedBlocks(text, opts = {}) {
     const {
         separator = ' ... ',
         includeQuotes = true,
-        returnEmptyOnNoQuotes = false,
+        returnEmptyOnNoQuotes = true,
         pairs = [
             // typographic doubles
             ['„', '“'],          // DE low-high
