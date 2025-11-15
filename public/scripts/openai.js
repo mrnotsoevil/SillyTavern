@@ -1991,6 +1991,20 @@ function saveModelList(data) {
 
         $('#model_xai_select').val(oai_settings.xai_model).trigger('change');
     }
+
+    if (oai_settings.chat_completion_source == chat_completion_sources.MOONSHOT) {
+        $('#model_moonshot_select').empty();
+        model_list.forEach((model) => {
+            $('#model_moonshot_select').append(new Option(model.id, model.id));
+        });
+
+        const selectedModel = model_list.find(model => model.id === oai_settings.moonshot_model);
+        if (model_list.length > 0 && (!selectedModel || !oai_settings.moonshot_model)) {
+            oai_settings.moonshot_model = model_list[0].id;
+        }
+
+        $('#model_moonshot_select').val(oai_settings.moonshot_model).trigger('change');
+    }
 }
 
 function appendOpenRouterOptions(model_list, groupModels = false, sort = false) {
@@ -4746,9 +4760,22 @@ function getZaiMaxContext(model, isUnlocked) {
     return Object.entries(contextMap).find(([key]) => model.includes(key))?.[1] || max_128k;
 }
 
+/**
+ * Get the maximum context size for the Moonshot model
+ * @param {string} model Model identifier
+ * @param {boolean} isUnlocked If context limits are unlocked
+ * @returns {number} Maximum context size in tokens
+ */
 function getMoonshotMaxContext(model, isUnlocked) {
     if (isUnlocked) {
         return unlocked_max;
+    }
+
+    if (Array.isArray(model_list) && model_list.length > 0) {
+        const modelInfo = model_list.find((record) => record.id === model);
+        if (modelInfo?.context_length) {
+            return modelInfo.context_length;
+        }
     }
 
     const contextMap = {
@@ -4983,6 +5010,10 @@ async function onModelChange() {
     }
 
     if (value && $(this).is('#model_moonshot_select')) {
+        if (!value) {
+            console.debug('Null Moonshot model selected. Ignoring.');
+            return;
+        }
         console.log('Moonshot model changed to', value);
         oai_settings.moonshot_model = value;
     }
@@ -5630,7 +5661,7 @@ export function isImageInliningSupported() {
         case chat_completion_sources.CLAUDE:
             return visionSupportedModels.some(model => oai_settings.claude_model.includes(model));
         case chat_completion_sources.OPENROUTER:
-            return (Array.isArray(model_list) && ['text+image->text+image', 'text+image->text'].includes(model_list.find(m => m.id === oai_settings.openrouter_model)?.architecture?.modality));
+            return (Array.isArray(model_list) && model_list.find(m => m.id === oai_settings.openrouter_model)?.architecture?.input_modalities?.includes('image'));
         case chat_completion_sources.CUSTOM:
             return true;
         case chat_completion_sources.MISTRALAI:
@@ -5684,6 +5715,8 @@ export function isVideoInliningSupported() {
             return videoSupportedModels.some(model => oai_settings.google_model.includes(model));
         case chat_completion_sources.VERTEXAI:
             return videoSupportedModels.some(model => oai_settings.vertexai_model.includes(model));
+        case chat_completion_sources.OPENROUTER:
+            return (Array.isArray(model_list) && model_list.find(m => m.id === oai_settings.openrouter_model)?.architecture?.input_modalities?.includes('video'));
         default:
             return false;
     }
@@ -5714,6 +5747,8 @@ export function isAudioInliningSupported() {
             return audioSupportedModels.some(model => oai_settings.google_model.includes(model));
         case chat_completion_sources.VERTEXAI:
             return audioSupportedModels.some(model => oai_settings.vertexai_model.includes(model));
+        case chat_completion_sources.OPENROUTER:
+            return (Array.isArray(model_list) && model_list.find(m => m.id === oai_settings.openrouter_model)?.architecture?.input_modalities?.includes('audio'));
         default:
             return false;
     }
